@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import os
 from pathlib import Path
 from flask_cors import CORS
+from urllib.parse import urlencode
 
 app = Flask(__name__)
 CORS(app)
@@ -53,6 +54,47 @@ def get_nearby_attractions(latitude, longitude, radius):
     except Exception as e:
         print(f"Error: {str(e)}")
         return jsonify([])
+
+@app.route('/api/place-details/<place_id>')
+def get_place_details(place_id):
+    if not GOOGLE_PLACES_API_KEY:
+        return jsonify({"error": "Google Places API key not configured"}), 500
+    
+    url = "https://maps.googleapis.com/maps/api/place/details/json"
+    params = {
+        'place_id': place_id,
+        'fields': 'photos,reviews',
+        'key': GOOGLE_PLACES_API_KEY
+    }
+    
+    try:
+        response = requests.get(url, params=params)
+        data = response.json()
+        
+        if 'result' not in data:
+            return jsonify({})
+        
+        result = data['result']
+        photos = []
+        
+        if 'photos' in result:
+            for photo in result['photos'][:5]:  # Limit to 5 photos
+                photo_url = f"https://maps.googleapis.com/maps/api/place/photo"
+                photo_params = {
+                    'maxwidth': 800,
+                    'photo_reference': photo['photo_reference'],
+                    'key': GOOGLE_PLACES_API_KEY
+                }
+                photos.append(f"{photo_url}?{urlencode(photo_params)}")
+        
+        return jsonify({
+            'photos': photos,
+            'reviews': result.get('reviews', [])
+        })
+        
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return jsonify({})
 
 @app.route('/')
 def test():

@@ -1,22 +1,43 @@
-import React from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import AttractionDetail from './AttractionDetail';
 
-const AttractionList = ({ attractions }) => (
-  <FlatList
-    data={attractions}
-    keyExtractor={(item) => item.id.toString()}
-    renderItem={({ item }) => (
-      <View style={styles.card}>
-        <Text style={styles.name}>{item.name}</Text>
-        <Text style={styles.description}>{item.description}</Text>
-        {item.rating > 0 && (
-          <Text style={styles.rating}>Rating: {item.rating} ⭐</Text>
+const AttractionList = ({ attractions }) => {
+  const [selectedAttraction, setSelectedAttraction] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const handleAttractionPress = (attraction) => {
+    setSelectedAttraction(attraction);
+    setModalVisible(true);
+  };
+
+  return (
+    <>
+      <FlatList
+        data={attractions}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <TouchableOpacity onPress={() => handleAttractionPress(item)}>
+            <View style={styles.card}>
+              <Text style={styles.name}>{item.name}</Text>
+              <Text style={styles.description}>{item.description}</Text>
+              {item.rating > 0 && (
+                <Text style={styles.rating}>Rating: {item.rating} ⭐</Text>
+              )}
+            </View>
+          </TouchableOpacity>
         )}
-      </View>
-    )}
-    style={styles.list}
-  />
-);
+        style={styles.list}
+      />
+
+      <AttractionDetail
+        attraction={selectedAttraction}
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+      />
+    </>
+  );
+};
 
 const styles = StyleSheet.create({
   list: {
