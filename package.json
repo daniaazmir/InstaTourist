@@ -20,7 +20,8 @@
     "react-dom": "18.3.1",
     "react-native": "0.76.2",
     "react-native-maps": "1.18.0",
-    "react-native-web": "~0.19.13"
+    "react-native-web": "~0.19.13",
+    "@react-native-community/slider": "4.5.5"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

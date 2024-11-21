@@ -14,11 +14,15 @@ load_dotenv(env_path)
 
 GOOGLE_PLACES_API_KEY = os.getenv('GOOGLE_PLACES_API_KEY')
 
-@app.route('/api/nearby-attractions/<float:latitude>/<float:longitude>')
-def get_nearby_attractions(latitude, longitude):
+@app.route('/api/nearby-attractions/<float:latitude>/<float:longitude>/<int:radius>')
+def get_nearby_attractions(latitude, longitude, radius):
     if not GOOGLE_PLACES_API_KEY:
         return jsonify({"error": "Google Places API key not configured"}), 500
-    radius = 5000
+    
+    # Default radius if not specified or invalid
+    if radius <= 0:
+        radius = 5000
+    
     place_type = 'tourist_attraction'
     
     url = f"https://maps.googleapis.com/maps/api/place/nearbysearch/json"

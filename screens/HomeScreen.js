@@ -6,6 +6,7 @@ import AttractionList from '../components/AttractionList';
 import { sendNotification } from '../utils/notificationUtils';
 import { fetchNearbyAttractions } from '../utils/locationUtils';
 import LocationButton from '../components/LocationButton';
+import RadiusSlider from '../components/RadiusSlider';
 
 const HomeScreen = () => {
   const [locationEnabled, setLocationEnabled] = useState(false);
@@ -18,6 +19,7 @@ const HomeScreen = () => {
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   });
+  const [radius, setRadius] = useState(5000); // Default 5km
 
   const enableLocation = async () => {
     setIsLoading(true);
@@ -29,7 +31,6 @@ const HomeScreen = () => {
         let location = await Location.getCurrentPositionAsync({});
         const { latitude, longitude } = location.coords;
         
-        // Update map region
         setRegion({
           latitude,
           longitude,
@@ -37,7 +38,7 @@ const HomeScreen = () => {
           longitudeDelta: 0.0421,
         });
 
-        const nearbyAttractions = await fetchNearbyAttractions(location.coords);
+        const nearbyAttractions = await fetchNearbyAttractions(location.coords, radius);
         setAttractions(nearbyAttractions);
         sendNotification('Attractions loaded', 'Check out the nearby places!');
       } else {
@@ -46,6 +47,19 @@ const HomeScreen = () => {
     } catch (error) {
       setError(error.message);
     } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRadiusChange = async (newRadius) => {
+    setRadius(newRadius);
+    if (locationEnabled && region) {
+      setIsLoading(true);
+      const nearbyAttractions = await fetchNearbyAttractions(
+        { latitude: region.latitude, longitude: region.longitude }, 
+        newRadius
+      );
+      setAttractions(nearbyAttractions);
       setIsLoading(false);
     }
   };
@@ -84,7 +98,15 @@ const HomeScreen = () => {
           enabled={locationEnabled}
           isLoading={isLoading}
         />
-        {locationEnabled && <AttractionList attractions={attractions} />}
+        {locationEnabled && (
+          <>
+            <RadiusSlider 
+              radius={radius}
+              onRadiusChange={handleRadiusChange}
+            />
+            <AttractionList attractions={attractions} />
+          </>
+        )}
       </View>
     </View>
   );
