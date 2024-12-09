@@ -23,7 +23,7 @@ const AttractionDetail = ({ attraction, visible, onClose }) => {
   const fetchPlaceDetails = async () => {
     try {
       const response = await fetch(
-        `http://192.168.1.9:5000/api/place-details/${attraction.id}`
+        `http://192.168.1.8:5000/api/place-details/${attraction.id}`
       );
       const data = await response.json();
       setPlaceDetails(data);
