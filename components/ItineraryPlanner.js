@@ -1,0 +1,267 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Modal,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Platform,
+  Button,
+} from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import RNPickerSelect from 'react-native-picker-select';
+
+const ItineraryPlanner = ({ attractions, visible, onClose }) => {
+  const [itinerary, setItinerary] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [preferences, setPreferences] = useState({
+    startTime: '9:00 AM',
+    endTime: '6:00 PM',
+    pace: 'moderate',
+    transportation: 'walking',
+  });
+
+  const timeOptions = [
+    { label: '8:00 AM', value: '8:00 AM' },
+    { label: '9:00 AM', value: '9:00 AM' },
+    { label: '10:00 AM', value: '10:00 AM' },
+    { label: '11:00 AM', value: '11:00 AM' },
+    { label: '12:00 PM', value: '12:00 PM' },
+    { label: '1:00 PM', value: '1:00 PM' },
+    { label: '2:00 PM', value: '2:00 PM' },
+    { label: '3:00 PM', value: '3:00 PM' },
+    { label: '4:00 PM', value: '4:00 PM' },
+    { label: '5:00 PM', value: '5:00 PM' },
+    { label: '6:00 PM', value: '6:00 PM' },
+  ];
+
+  const paceOptions = [
+    { label: 'Relaxed - Take your time', value: 'relaxed' },
+    { label: 'Moderate - Balanced pace', value: 'moderate' },
+    { label: 'Fast - See as much as possible', value: 'fast' }
+  ];
+
+  const transportOptions = [
+    { label: '🚶 Walking', value: 'walking' },
+    { label: '🚌 Public Transport', value: 'public_transport' },
+    { label: '🚗 Driving', value: 'driving' }
+  ];
+
+  const generateItinerary = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('http://192.168.1.11:5000/api/generate-itinerary', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          attractions,
+          preferences,
+        }),
+      });
+      
+      const data = await response.json();
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      setItinerary(data.itinerary);
+    } catch (error) {
+      console.error('Error generating itinerary:', error);
+      alert('Failed to generate itinerary. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={visible}
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+            <MaterialIcons name="close" size={24} color="#000" />
+          </TouchableOpacity>
+          
+          <Text style={styles.title}>Plan Your Day</Text>
+          
+          <ScrollView style={styles.preferencesContainer}>
+            <Text style={styles.sectionTitle}>Customize Your Plan</Text>
+            
+            <View style={styles.pickerContainer}>
+              <Text style={styles.label}>Start Time</Text>
+              <RNPickerSelect
+                onValueChange={(value) => setPreferences({...preferences, startTime: value})}
+                value={preferences.startTime}
+                items={timeOptions}
+                style={pickerSelectStyles}
+                useNativeAndroidPickerStyle={false}
+                placeholder={{ label: 'Select start time...', value: null }}
+              />
+            </View>
+
+            <View style={styles.pickerContainer}>
+              <Text style={styles.label}>End Time</Text>
+              <RNPickerSelect
+                onValueChange={(value) => setPreferences({...preferences, endTime: value})}
+                value={preferences.endTime}
+                items={timeOptions}
+                style={pickerSelectStyles}
+                useNativeAndroidPickerStyle={false}
+                placeholder={{ label: 'Select end time...', value: null }}
+              />
+            </View>
+
+            <View style={styles.pickerContainer}>
+              <Text style={styles.label}>Pace</Text>
+              <RNPickerSelect
+                onValueChange={(value) => setPreferences({...preferences, pace: value})}
+                value={preferences.pace}
+                items={paceOptions}
+                style={pickerSelectStyles}
+                useNativeAndroidPickerStyle={false}
+                placeholder={{ label: 'Select pace...', value: null }}
+              />
+            </View>
+
+            <View style={styles.pickerContainer}>
+              <Text style={styles.label}>Transportation</Text>
+              <RNPickerSelect
+                onValueChange={(value) => setPreferences({...preferences, transportation: value})}
+                value={preferences.transportation}
+                items={transportOptions}
+                style={pickerSelectStyles}
+                useNativeAndroidPickerStyle={false}
+                placeholder={{ label: 'Select transportation...', value: null }}
+              />
+            </View>
+          </ScrollView>
+
+          <TouchableOpacity 
+            style={styles.generateButton}
+            onPress={generateItinerary}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={styles.generateButtonText}>Generate Itinerary</Text>
+            )}
+          </TouchableOpacity>
+
+          {itinerary && (
+            <ScrollView style={styles.itineraryContainer}>
+              <Text style={styles.itineraryText}>{itinerary}</Text>
+            </ScrollView>
+          )}
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+const styles = StyleSheet.create({
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: '90%',
+  },
+  closeButton: {
+    position: 'absolute',
+    right: 20,
+    top: 20,
+    zIndex: 1,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  preferencesContainer: {
+    maxHeight: 300,
+    marginBottom: 15,
+  },
+  pickerContainer: {
+    marginBottom: 15,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 10,
+    padding: 10,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 5,
+    color: '#333',
+  },
+  picker: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+  },
+  generateButton: {
+    backgroundColor: '#2196F3',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  generateButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  itineraryContainer: {
+    marginTop: 10,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  itineraryText: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#333',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
+});
+
+const pickerSelectStyles = StyleSheet.create({
+  inputIOS: {
+    fontSize: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    color: 'black',
+    backgroundColor: 'white',
+    paddingRight: 30,
+  },
+  inputAndroid: {
+    fontSize: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    color: 'black',
+    backgroundColor: 'white',
+    paddingRight: 30,
+  },
+});
+
+export default ItineraryPlanner; 

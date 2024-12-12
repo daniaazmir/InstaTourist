@@ -1,10 +1,12 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 import requests
 from dotenv import load_dotenv
 import os
 from pathlib import Path
 from flask_cors import CORS
 from urllib.parse import urlencode
+from itinerary_generator import generate_itinerary
+from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)
@@ -95,6 +97,23 @@ def get_place_details(place_id):
     except Exception as e:
         print(f"Error: {str(e)}")
         return jsonify({})
+
+@app.route('/api/generate-itinerary', methods=['POST'])
+def generate_itinerary_route():
+    try:
+        data = request.json
+        attractions = data.get('attractions', [])
+        preferences = data.get('preferences', {})
+        
+        itinerary = generate_itinerary(attractions, preferences)
+        
+        return jsonify({
+            "itinerary": itinerary
+        })
+        
+    except Exception as e:
+        print(f"Error generating itinerary: {str(e)}")
+        return jsonify({"error": "Failed to generate itinerary"}), 500
 
 @app.route('/')
 def test():
