@@ -73,21 +73,40 @@ Please provide a structured itinerary with exact timings."""
 def create_fallback_itinerary(attractions, preferences):
     """Create a structured itinerary when AI generation fails"""
     start_time = datetime.strptime(preferences.get('startTime', '9:00 AM'), '%I:%M %p')
+    end_time = min(
+        datetime.strptime(preferences.get('endTime', '6:00 PM'), '%I:%M %p'),
+        datetime.strptime('10:00 PM', '%I:%M %p')  # Maximum limit of 10 PM
+    )
     current_time = start_time
     
-    # Calculate time per attraction plus travel time
-    total_hours = (datetime.strptime(preferences.get('endTime', '6:00 PM'), '%I:%M %p') - start_time).seconds / 3600
-    base_time_per_attraction = min(1.5, total_hours / (len(attractions) + 2))  # +2 for lunch and buffer
+    # Calculate available time and time per attraction
+    total_minutes = (end_time - start_time).seconds / 60
+    num_attractions = len(attractions)
+    
+    # Reserve time for lunch (60 mins) and travel between locations
+    lunch_duration = 60
     travel_time = 20  # minutes between locations
+    total_travel_time = (num_attractions - 1) * travel_time
+    
+    # Calculate time per attraction, ensuring we don't exceed end time
+    available_time = total_minutes - lunch_duration - total_travel_time
+    time_per_attraction = min(90, int(available_time / num_attractions))  # max 90 mins per attraction
     
     itinerary = ["📋 Your Customized Itinerary\n"]
     itinerary.append("------------------------\n")
     
     # Morning activities
+    morning_attractions = [a for a in attractions if current_time.hour < 12]
     itinerary.append("🌅 Morning Activities:")
-    for i, attraction in enumerate(attractions[:2]):
+    for i, attraction in enumerate(morning_attractions):
+        if current_time >= end_time:
+            break
+            
         time_str = current_time.strftime('%I:%M %p')
-        duration = int(base_time_per_attraction * 60)
+        duration = min(
+            time_per_attraction,
+            int((end_time - current_time).seconds / 60)
+        )
         
         itinerary.append(f"\n⏰ {time_str} - {attraction['name'].upper()}")
         itinerary.append(f"📍 {attraction['description']}")
@@ -96,48 +115,56 @@ def create_fallback_itinerary(attractions, preferences):
         itinerary.append(f"⏱️ Duration: {duration} minutes")
         
         # Add travel time to next location
-        if i < len(attractions[:2]) - 1:
-            current_time = (datetime.strptime(time_str, '%I:%M %p') + 
-                          timedelta(minutes=duration + travel_time))
+        next_time = current_time + timedelta(minutes=duration)
+        if i < len(morning_attractions) - 1 and next_time < end_time:
             itinerary.append(f"🚶 {travel_time} minutes travel to next location")
+            current_time = next_time + timedelta(minutes=travel_time)
         else:
-            current_time = (datetime.strptime(time_str, '%I:%M %p') + 
-                          timedelta(minutes=duration))
+            current_time = next_time
     
-    # Lunch break
+    # Lunch break around noon
     lunch_time = max(
-        current_time + timedelta(minutes=30),
+        current_time,
         datetime.strptime('12:00 PM', '%I:%M %p')
     )
-    itinerary.append("\n🍴 Lunch Break:")
-    itinerary.append(f"⏰ {lunch_time.strftime('%I:%M %p')} - Take a refreshing break (60 minutes)")
-    if preferences.get('pace') == 'relaxed':
-        itinerary.append("💡 Tip: Use this time to rest and recharge")
+    if lunch_time < end_time:
+        itinerary.append("\n🍴 Lunch Break:")
+        itinerary.append(f"⏰ {lunch_time.strftime('%I:%M %p')} - Take a refreshing break (60 minutes)")
+        current_time = lunch_time + timedelta(minutes=lunch_duration)
     
     # Afternoon activities
-    current_time = lunch_time + timedelta(minutes=60)
-    itinerary.append("\n🌇 Afternoon Activities:")
-    
-    for i, attraction in enumerate(attractions[2:]):
-        time_str = current_time.strftime('%I:%M %p')
-        duration = int(base_time_per_attraction * 60)
+    if current_time < end_time:
+        afternoon_attractions = [a for a in attractions if a not in morning_attractions]
+        itinerary.append("\n🌇 Afternoon Activities:")
         
-        itinerary.append(f"\n⏰ {time_str} - {attraction['name'].upper()}")
-        itinerary.append(f"📍 {attraction['description']}")
-        if attraction['rating']:
-            itinerary.append(f"⭐ Rating: {attraction['rating']}")
-        itinerary.append(f"⏱️ Duration: {duration} minutes")
-        
-        # Add travel time to next location
-        if i < len(attractions[2:]) - 1:
-            current_time = (datetime.strptime(time_str, '%I:%M %p') + 
-                          timedelta(minutes=duration + travel_time))
-            itinerary.append(f"🚶 {travel_time} minutes travel to next location")
-        else:
-            current_time = (datetime.strptime(time_str, '%I:%M %p') + 
-                          timedelta(minutes=duration))
+        for i, attraction in enumerate(afternoon_attractions):
+            if current_time >= end_time:
+                break
+                
+            time_str = current_time.strftime('%I:%M %p')
+            duration = min(
+                time_per_attraction,
+                int((end_time - current_time).seconds / 60)
+            )
+            
+            itinerary.append(f"\n⏰ {time_str} - {attraction['name'].upper()}")
+            itinerary.append(f"📍 {attraction['description']}")
+            if attraction['rating']:
+                itinerary.append(f"⭐ Rating: {attraction['rating']}")
+            itinerary.append(f"⏱️ Duration: {duration} minutes")
+            
+            # Add travel time to next location
+            next_time = current_time + timedelta(minutes=duration)
+            if i < len(afternoon_attractions) - 1 and next_time < end_time:
+                itinerary.append(f"🚶 {travel_time} minutes travel to next location")
+                current_time = next_time + timedelta(minutes=travel_time)
+            else:
+                current_time = next_time
     
-    # Add pace-specific tips
+    # Add end time
+    itinerary.append(f"\n🏁 End of Tour: {min(current_time, end_time).strftime('%I:%M %p')}")
+    
+    # Add tips section
     itinerary.append("\n💡 Travel Tips:")
     if preferences.get('pace') == 'relaxed':
         itinerary.append("✓ Take your time to enjoy each location")
@@ -155,11 +182,5 @@ def create_fallback_itinerary(attractions, preferences):
     itinerary.append("✓ 🚰 Carry water and snacks")
     itinerary.append("✓ 🕒 Check attraction opening hours")
     itinerary.append(f"✓ 🚶 {preferences.get('transportation', 'walking').title()} is your main mode of transport")
-    
-    # Weather-based tips (you could add weather API integration here)
-    itinerary.append("\n🌤️ Preparation:")
-    itinerary.append("✓ Check weather forecast")
-    itinerary.append("✓ Bring umbrella/sunscreen as needed")
-    itinerary.append("✓ Carry a portable charger")
     
     return "\n".join(itinerary)
