@@ -96,50 +96,62 @@ const ItineraryPlanner = ({ attractions, visible, onClose }) => {
             
             <View style={styles.pickerContainer}>
               <Text style={styles.label}>Start Time</Text>
-              <RNPickerSelect
-                onValueChange={(value) => setPreferences({...preferences, startTime: value})}
-                value={preferences.startTime}
-                items={timeOptions}
-                style={pickerSelectStyles}
-                useNativeAndroidPickerStyle={false}
-                placeholder={{ label: 'Select start time...', value: null }}
-              />
+              <View style={styles.pickerWrapper}>
+                <RNPickerSelect
+                  onValueChange={(value) => setPreferences({...preferences, startTime: value})}
+                  value={preferences.startTime}
+                  items={timeOptions}
+                  style={pickerSelectStyles}
+                  useNativeAndroidPickerStyle={false}
+                  placeholder={{ label: 'Select start time...', value: null }}
+                  Icon={() => <MaterialIcons name="arrow-drop-down" size={24} color="#666" />}
+                />
+              </View>
             </View>
 
             <View style={styles.pickerContainer}>
               <Text style={styles.label}>End Time</Text>
-              <RNPickerSelect
-                onValueChange={(value) => setPreferences({...preferences, endTime: value})}
-                value={preferences.endTime}
-                items={timeOptions}
-                style={pickerSelectStyles}
-                useNativeAndroidPickerStyle={false}
-                placeholder={{ label: 'Select end time...', value: null }}
-              />
+              <View style={styles.pickerWrapper}>
+                <RNPickerSelect
+                  onValueChange={(value) => setPreferences({...preferences, endTime: value})}
+                  value={preferences.endTime}
+                  items={timeOptions}
+                  style={pickerSelectStyles}
+                  useNativeAndroidPickerStyle={false}
+                  placeholder={{ label: 'Select end time...', value: null }}
+                  Icon={() => <MaterialIcons name="arrow-drop-down" size={24} color="#666" />}
+                />
+              </View>
             </View>
 
             <View style={styles.pickerContainer}>
               <Text style={styles.label}>Pace</Text>
-              <RNPickerSelect
-                onValueChange={(value) => setPreferences({...preferences, pace: value})}
-                value={preferences.pace}
-                items={paceOptions}
-                style={pickerSelectStyles}
-                useNativeAndroidPickerStyle={false}
-                placeholder={{ label: 'Select pace...', value: null }}
-              />
+              <View style={styles.pickerWrapper}>
+                <RNPickerSelect
+                  onValueChange={(value) => setPreferences({...preferences, pace: value})}
+                  value={preferences.pace}
+                  items={paceOptions}
+                  style={pickerSelectStyles}
+                  useNativeAndroidPickerStyle={false}
+                  placeholder={{ label: 'Select pace...', value: null }}
+                  Icon={() => <MaterialIcons name="arrow-drop-down" size={24} color="#666" />}
+                />
+              </View>
             </View>
 
             <View style={styles.pickerContainer}>
               <Text style={styles.label}>Transportation</Text>
-              <RNPickerSelect
-                onValueChange={(value) => setPreferences({...preferences, transportation: value})}
-                value={preferences.transportation}
-                items={transportOptions}
-                style={pickerSelectStyles}
-                useNativeAndroidPickerStyle={false}
-                placeholder={{ label: 'Select transportation...', value: null }}
-              />
+              <View style={styles.pickerWrapper}>
+                <RNPickerSelect
+                  onValueChange={(value) => setPreferences({...preferences, transportation: value})}
+                  value={preferences.transportation}
+                  items={transportOptions}
+                  style={pickerSelectStyles}
+                  useNativeAndroidPickerStyle={false}
+                  placeholder={{ label: 'Select transportation...', value: null }}
+                  Icon={() => <MaterialIcons name="arrow-drop-down" size={24} color="#666" />}
+                />
+              </View>
             </View>
           </ScrollView>
 
@@ -195,7 +207,15 @@ const styles = StyleSheet.create({
     maxHeight: 300,
     marginBottom: 15,
   },
+  pickerWrapper: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    marginTop: 5,
+  },
   pickerContainer: {
+    marginBottom: 20,
     marginBottom: 15,
     backgroundColor: '#f5f5f5',
     borderRadius: 10,
