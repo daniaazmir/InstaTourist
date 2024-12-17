@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -22,6 +22,23 @@ const ItineraryPlanner = ({ attractions, visible, onClose }) => {
     pace: 'moderate',
     transportation: 'walking',
   });
+
+  useEffect(() => {
+    if (!visible) {
+      setItinerary(null);
+      setPreferences({
+        startTime: '9:00 AM',
+        endTime: '6:00 PM',
+        pace: 'moderate',
+        transportation: 'walking',
+      });
+    }
+  }, [visible]);
+
+  const handleClose = () => {
+    setItinerary(null);
+    onClose();
+  };
 
   const timeOptions = [
     { label: '8:00 AM', value: '8:00 AM' },
@@ -52,7 +69,7 @@ const ItineraryPlanner = ({ attractions, visible, onClose }) => {
   const generateItinerary = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://192.168.1.11:5000/api/generate-itinerary', {
+      const response = await fetch('http://192.168.1.15:5000/api/generate-itinerary', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -81,11 +98,11 @@ const ItineraryPlanner = ({ attractions, visible, onClose }) => {
       animationType="slide"
       transparent={true}
       visible={visible}
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
     >
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
             <MaterialIcons name="close" size={24} color="#000" />
           </TouchableOpacity>
           
