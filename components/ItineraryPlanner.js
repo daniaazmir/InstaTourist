@@ -77,6 +77,8 @@ const ItineraryPlanner = ({ attractions, visible, onClose }) => {
         body: JSON.stringify({
           attractions,
           preferences,
+          latitude: attractions[0].location.lat,
+          longitude: attractions[0].location.lng,
         }),
       });
       

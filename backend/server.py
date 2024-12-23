@@ -187,11 +187,34 @@ def generate_itinerary():
     data = request.json
     attractions = data.get('attractions', [])
     preferences = data.get('preferences', {})
+    latitude = data.get('latitude')
+    longitude = data.get('longitude')
     
     if not attractions:
         return jsonify({"error": "No attractions provided"}), 400
 
-    # Create a more detailed prompt for better results
+    # Get weather forecast
+    try:
+        # Use the existing weather function
+        weather_response = get_cached_weather(
+            round(latitude, 4), 
+            round(longitude, 4), 
+            datetime.now().replace(minute=0, second=0, microsecond=0)
+        )
+        weather_data = weather_response.get_json()  # Convert response to JSON
+    except Exception as e:
+        print(f"Warning: Could not fetch weather data: {e}")
+        weather_data = None
+
+    # Create weather information text
+    weather_text = ""
+    if weather_data and 'forecast' in weather_data:
+        weather_text = "\nWeather Forecast:\n"
+        for day in weather_data['forecast']:
+            date = datetime.fromisoformat(day['date'].replace('Z', '+00:00')).strftime('%A')
+            weather_text += f"- {date}: {day['day_condition']}, {day['min_temp']}°C to {day['max_temp']}°C\n"
+
+    # Create attractions text
     attractions_text = "\n".join([
         f"{i+1}. {a['name']} - {a['description']} (Rating: {a['rating']}★)"
         for i, a in enumerate(attractions)
@@ -208,34 +231,38 @@ Trip Details:
 - Transportation Mode: {preferences.get('transportation', 'walking')}
 - Pace: {preferences.get('pace', 'moderate')}
 
-Please create a detailed itinerary that:
-1. Includes realistic travel times between locations
-2. Suggests a logical order to visit attractions
-3. Includes a lunch break around midday
-4. Considers the rating of each attraction
-5. Provides brief tips for each location
-6. Estimates duration at each stop
+{weather_text}
+
+Please create a weather-aware itinerary that:
+1. Considers the weather forecast when scheduling outdoor vs indoor activities
+2. Includes realistic travel times between locations
+3. Suggests a logical order to visit attractions
+4. Includes a lunch break around midday
+5. Considers the rating of each attraction
+6. Provides brief tips for each location
+7. Estimates duration at each stop
+8. Suggests indoor alternatives or timing adjustments based on weather
 
 Format the response as:
 TIME - LOCATION (DURATION)
+- Weather consideration
 - Brief description or tip
 - Travel time to next location
 
 Example:
-9:00 AM - Museum of Art (90 minutes)
+9:00 AM - Indoor Museum (90 minutes)
+- Perfect for the morning rain
 - Start with the main exhibition hall
-- Perfect time to avoid crowds
 - 15 min walk to next location"""
 
     try:
-        # Updated OpenAI API call syntax for version 1.0.0+
         client = openai.OpenAI()
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {
                     "role": "system",
-                    "content": "You are an experienced travel planner who creates detailed, practical itineraries."
+                    "content": "You are an experienced travel planner who creates detailed, practical itineraries with weather considerations."
                 },
                 {"role": "user", "content": prompt}
             ],
@@ -245,25 +272,17 @@ Example:
             frequency_penalty=0.3
         )
         
-        # Updated response parsing
         generated_text = response.choices[0].message.content.strip()
         
-        # Format the response
         formatted_response = {
             "itinerary": generated_text,
             "attractions_count": len(attractions),
-            "generated_at": datetime.now().isoformat()
+            "generated_at": datetime.now().isoformat(),
+            "weather_included": weather_data is not None
         }
         
         return jsonify(formatted_response)
     
-    except openai.APIError as e:
-        print(f"OpenAI API Error: {str(e)}")
-        return jsonify({"error": "OpenAI API error occurred"}), 500
-    except openai.RateLimitError:
-        return jsonify({"error": "Rate limit exceeded, please try again later"}), 429
-    except openai.AuthenticationError:
-        return jsonify({"error": "Authentication with OpenAI failed"}), 401
     except Exception as e:
         print(f"Error generating itinerary: {str(e)}")
         return jsonify({"error": "Failed to generate itinerary"}), 500
