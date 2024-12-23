@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Dimensions, Alert, Text, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, StyleSheet, Dimensions, Alert, Text, TouchableOpacity, PanResponder, Animated } from 'react-native';
 import * as Location from 'expo-location';
 import * as Google from 'expo-auth-session/providers/google';
 import MapView, { Marker, Callout } from 'react-native-maps';
@@ -28,6 +28,26 @@ const HomeScreen = () => {
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
   const [userToken, setUserToken] = useState(null);
   const [userReviews, setUserReviews] = useState({});
+
+  const pan = useRef(new Animated.ValueXY()).current;
+  const [overlayHeight, setOverlayHeight] = useState(Dimensions.get('window').height * 0.5);
+  const minHeight = 20; // Minimum height of the overlay
+  const maxHeight = Dimensions.get('window').height * 0.8; // Maximum height (80% of screen)
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderMove: (_, gesture) => {
+        const newHeight = overlayHeight - gesture.dy;
+        if (newHeight >= minHeight && newHeight <= maxHeight) {
+          setOverlayHeight(newHeight);
+        }
+      },
+      onPanResponderRelease: () => {
+        // Optional: Add snap animation here if desired
+      },
+    })
+  ).current;
 
   // Set up Google Sign In
   const [request, response, promptAsync] = Google.useAuthRequest({
@@ -160,7 +180,11 @@ const HomeScreen = () => {
         ))}
       </MapView>
       
-      <View style={styles.overlay}>
+      <Animated.View style={[styles.overlay, { height: overlayHeight }]}>
+        <View {...panResponder.panHandlers} style={styles.dragHandle}>
+          <View style={styles.dragIndicator} />
+        </View>
+        
         {locationEnabled && (
           <WeatherForecast 
             latitude={region.latitude}
@@ -181,7 +205,7 @@ const HomeScreen = () => {
             <AttractionList attractions={attractions} />
           </>
         )}
-      </View>
+      </Animated.View>
 
       <ReviewModal
         visible={reviewModalVisible}
@@ -207,7 +231,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: 'white',
-    padding: 16,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     shadowColor: '#000',
@@ -218,7 +241,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
-    maxHeight: '50%',
   },
   calloutContainer: {
     minWidth: 150,
@@ -254,6 +276,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
   },
+  dragHandle: {
+    width: '100%',
+    height: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  dragIndicator: {
+    width: 40,
+    height: 5,
+    backgroundColor: '#D3D3D3',
+    borderRadius: 5,
+  },
+  contentContainer: {
+    flex: 1,
+    padding: 16,
+  }
 });
 
 export default HomeScreen;
