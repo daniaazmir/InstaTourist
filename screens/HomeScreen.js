@@ -1,12 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Dimensions } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, StyleSheet, Dimensions, Alert, Text, TouchableOpacity, PanResponder, Animated } from 'react-native';
 import * as Location from 'expo-location';
-import MapView, { Marker } from 'react-native-maps';
+import * as Google from 'expo-auth-session/providers/google';
+import MapView, { Marker, Callout } from 'react-native-maps';
 import AttractionList from '../components/AttractionList';
 import { sendNotification } from '../utils/notificationUtils';
 import { fetchNearbyAttractions } from '../utils/locationUtils';
 import LocationButton from '../components/LocationButton';
 import RadiusSlider from '../components/RadiusSlider';
+import ReviewModal from '../components/ReviewModal';
+import { MaterialIcons } from '@expo/vector-icons';
+import WeatherForecast from '../components/WeatherForecast';
 
 const HomeScreen = () => {
   const [locationEnabled, setLocationEnabled] = useState(false);
@@ -20,6 +24,46 @@ const HomeScreen = () => {
     longitudeDelta: 0.0421,
   });
   const [radius, setRadius] = useState(5000); // Default 5km
+  const [selectedPlace, setSelectedPlace] = useState(null);
+  const [reviewModalVisible, setReviewModalVisible] = useState(false);
+  const [userToken, setUserToken] = useState(null);
+  const [userReviews, setUserReviews] = useState({});
+
+  const pan = useRef(new Animated.ValueXY()).current;
+  const [overlayHeight, setOverlayHeight] = useState(Dimensions.get('window').height * 0.5);
+  const minHeight = 20; // Minimum height of the overlay
+  const maxHeight = Dimensions.get('window').height * 0.8; // Maximum height (80% of screen)
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderMove: (_, gesture) => {
+        const newHeight = overlayHeight - gesture.dy;
+        if (newHeight >= minHeight && newHeight <= maxHeight) {
+          setOverlayHeight(newHeight);
+        }
+      },
+      onPanResponderRelease: () => {
+        // Optional: Add snap animation here if desired
+      },
+    })
+  ).current;
+
+  // Set up Google Sign In
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    androidClientId: "your-android-client-id",
+    iosClientId: "your-ios-client-id",
+    expoClientId: "your-expo-client-id",
+    webClientId: "your-web-client-id",
+    responseType: "id_token",
+    scopes: ["profile", "email"]
+  });
+
+  useEffect(() => {
+    if (response?.type === 'success') {
+      setUserToken(response.authentication.accessToken);
+    }
+  }, [response]);
 
   const enableLocation = async () => {
     setIsLoading(true);
@@ -64,6 +108,21 @@ const HomeScreen = () => {
     }
   };
 
+  const handleSubmitReview = async (rating, review) => {
+    try {
+      setUserReviews(prev => ({
+        ...prev,
+        [selectedPlace.id]: { rating, review }
+      }));
+      
+      Alert.alert('Success', 'Your review has been saved!');
+      setReviewModalVisible(false);
+    } catch (error) {
+      console.error('Error saving review:', error);
+      Alert.alert('Error', 'Failed to save review. Please try again.');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <MapView 
@@ -86,13 +145,52 @@ const HomeScreen = () => {
               latitude: attraction.location.lat,
               longitude: attraction.location.lng,
             }}
-            title={attraction.name}
-            description={attraction.description}
-          />
+          >
+            <Callout onPress={() => {
+              if (!userReviews[attraction.id]) {
+                setSelectedPlace(attraction);
+                setReviewModalVisible(true);
+              }
+            }}>
+              <View style={styles.calloutContainer}>
+                <Text style={styles.calloutTitle}>{attraction.name}</Text>
+                
+                {userReviews[attraction.id] ? (
+                  <View style={styles.reviewContainer}>
+                    <Text style={styles.ratingText}>Your Rating:</Text>
+                    <View style={styles.starsContainer}>
+                      {[...Array(5)].map((_, index) => (
+                        <MaterialIcons
+                          key={index}
+                          name="star"
+                          size={16}
+                          color={index < userReviews[attraction.id].rating ? '#FFA000' : '#D3D3D3'}
+                        />
+                      ))}
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.reviewButton}>
+                    <Text style={styles.reviewButtonText}>I've been here!</Text>
+                  </View>
+                )}
+              </View>
+            </Callout>
+          </Marker>
         ))}
       </MapView>
       
-      <View style={styles.overlay}>
+      <Animated.View style={[styles.overlay, { height: overlayHeight }]}>
+        <View {...panResponder.panHandlers} style={styles.dragHandle}>
+          <View style={styles.dragIndicator} />
+        </View>
+        
+        {locationEnabled && (
+          <WeatherForecast 
+            latitude={region.latitude}
+            longitude={region.longitude}
+          />
+        )}
         <LocationButton 
           onPress={enableLocation} 
           enabled={locationEnabled}
@@ -107,7 +205,14 @@ const HomeScreen = () => {
             <AttractionList attractions={attractions} />
           </>
         )}
-      </View>
+      </Animated.View>
+
+      <ReviewModal
+        visible={reviewModalVisible}
+        onClose={() => setReviewModalVisible(false)}
+        place={selectedPlace}
+        onSubmitReview={handleSubmitReview}
+      />
     </View>
   );
 };
@@ -126,7 +231,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: 'white',
-    padding: 16,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     shadowColor: '#000',
@@ -137,8 +241,59 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
-    maxHeight: '50%',
   },
+  calloutContainer: {
+    minWidth: 150,
+    padding: 10,
+  },
+  calloutTitle: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  reviewButton: {
+    backgroundColor: '#4CAF50',
+    padding: 8,
+    borderRadius: 5,
+    marginTop: 5,
+  },
+  reviewButtonText: {
+    color: 'white',
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  reviewContainer: {
+    alignItems: 'center',
+    marginTop: 5,
+  },
+  ratingText: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 3,
+  },
+  starsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  dragHandle: {
+    width: '100%',
+    height: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  dragIndicator: {
+    width: 40,
+    height: 5,
+    backgroundColor: '#D3D3D3',
+    borderRadius: 5,
+  },
+  contentContainer: {
+    flex: 1,
+    padding: 16,
+  }
 });
 
 export default HomeScreen;
