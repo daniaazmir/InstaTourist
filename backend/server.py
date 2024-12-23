@@ -8,6 +8,7 @@ from urllib.parse import urlencode
 from itinerary_generator import generate_itinerary
 from datetime import datetime
 import openai
+from functools import lru_cache
 
 app = Flask(__name__)
 CORS(app)
@@ -17,6 +18,7 @@ env_path = Path(__file__).parent.parent / '.env'
 load_dotenv(env_path)
 
 GOOGLE_PLACES_API_KEY = os.getenv('GOOGLE_PLACES_API_KEY')
+ACCUWEATHER_API_KEY = os.getenv('ACCUWEATHER_API_KEY')
 
 # Set your OpenAI API key
 openai.api_key = os.getenv('OPENAI_API_KEY')
@@ -26,6 +28,66 @@ if not GOOGLE_PLACES_API_KEY or not openai.api_key:
     print("Warning: Missing API keys!")
     print("GOOGLE_PLACES_API_KEY:", "Present" if GOOGLE_PLACES_API_KEY else "Missing")
     print("OPENAI_API_KEY:", "Present" if openai.api_key else "Missing")
+
+# Cache the weather data for 1 hour
+@lru_cache(maxsize=100)
+def get_cached_weather(latitude, longitude, timestamp):
+    if not ACCUWEATHER_API_KEY:
+        raise Exception("AccuWeather API key not configured")
+        
+    try:
+        # First, get the location key using coordinates
+        location_url = f"http://dataservice.accuweather.com/locations/v1/cities/geoposition/search"
+        location_params = {
+            'apikey': ACCUWEATHER_API_KEY,
+            'q': f"{latitude},{longitude}",
+        }
+        
+        location_response = requests.get(location_url, params=location_params)
+        if location_response.status_code != 200:
+            raise Exception(f"AccuWeather API error: {location_response.text}")
+            
+        location_data = location_response.json()
+        if 'Key' not in location_data:
+            raise Exception("Location key not found in response")
+            
+        location_key = location_data['Key']
+        
+        # Then, get the forecast
+        forecast_url = f"http://dataservice.accuweather.com/forecasts/v1/daily/5day/{location_key}"  # Changed to 5-day forecast
+        forecast_params = {
+            'apikey': ACCUWEATHER_API_KEY,
+            'metric': 'true'
+        }
+        
+        forecast_response = requests.get(forecast_url, params=forecast_params)
+        if forecast_response.status_code != 200:
+            raise Exception(f"Forecast API error: {forecast_response.text}")
+            
+        forecast_data = forecast_response.json()
+        if 'DailyForecasts' not in forecast_data:
+            raise Exception("Forecast data not available")
+            
+        # Format the response
+        formatted_forecast = []
+        for day in forecast_data['DailyForecasts']:
+            formatted_forecast.append({
+                'date': day['Date'],
+                'min_temp': day['Temperature']['Minimum']['Value'],
+                'max_temp': day['Temperature']['Maximum']['Value'],
+                'day_condition': day['Day']['IconPhrase'],
+                'night_condition': day['Night']['IconPhrase'],
+                'precipitation_probability': day.get('Day', {}).get('PrecipitationProbability', 0),
+            })
+            
+        return jsonify({
+            'location': location_data['LocalizedName'],
+            'country': location_data['Country']['LocalizedName'],
+            'forecast': formatted_forecast
+        })
+        
+    except Exception as e:
+        raise Exception(f"Failed to fetch weather data: {str(e)}")
 
 @app.route('/api/nearby-attractions/<float:latitude>/<float:longitude>/<int:radius>')
 def get_nearby_attractions(latitude, longitude, radius):
@@ -196,6 +258,21 @@ Example:
     except Exception as e:
         print(f"Error generating itinerary: {str(e)}")
         return jsonify({"error": "Failed to generate itinerary"}), 500
+
+@app.route('/api/weather/<float:latitude>/<float:longitude>')
+def get_weather_forecast(latitude, longitude):
+    # Round coordinates to 4 decimal places to improve cache hits
+    lat = round(latitude, 4)
+    lon = round(longitude, 4)
+    
+    # Round timestamp to hours to cache for 1 hour
+    timestamp = datetime.now().replace(minute=0, second=0, microsecond=0)
+    
+    try:
+        return get_cached_weather(lat, lon, timestamp)
+    except Exception as e:
+        print(f"Error fetching weather data: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/')
 def test():

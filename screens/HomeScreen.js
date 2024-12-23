@@ -10,6 +10,7 @@ import LocationButton from '../components/LocationButton';
 import RadiusSlider from '../components/RadiusSlider';
 import ReviewModal from '../components/ReviewModal';
 import { MaterialIcons } from '@expo/vector-icons';
+import WeatherForecast from '../components/WeatherForecast';
 
 const HomeScreen = () => {
   const [locationEnabled, setLocationEnabled] = useState(false);
@@ -160,6 +161,12 @@ const HomeScreen = () => {
       </MapView>
       
       <View style={styles.overlay}>
+        {locationEnabled && (
+          <WeatherForecast 
+            latitude={region.latitude}
+            longitude={region.longitude}
+          />
+        )}
         <LocationButton 
           onPress={enableLocation} 
           enabled={locationEnabled}

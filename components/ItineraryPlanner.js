@@ -69,7 +69,7 @@ const ItineraryPlanner = ({ attractions, visible, onClose }) => {
   const generateItinerary = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://192.168.1.15:5000/api/generate-itinerary', {
+      const response = await fetch('http://10.168.234.234:5000/api/generate-itinerary', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
