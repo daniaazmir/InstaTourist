@@ -9,9 +9,17 @@ from itinerary_generator import generate_itinerary
 from datetime import datetime
 import openai
 from functools import lru_cache
+from datetime import timedelta
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={
+    r"/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "OPTIONS"],
+        "max_age": 3600,
+        "timeout": 30
+    }
+})
 
 # Look for .env file in the parent directory (root of project)
 env_path = Path(__file__).parent.parent / '.env'
@@ -269,7 +277,8 @@ Example:
             temperature=0.7,
             max_tokens=1000,
             presence_penalty=0.6,
-            frequency_penalty=0.3
+            frequency_penalty=0.3,
+            timeout=25  # 25 second timeout
         )
         
         generated_text = response.choices[0].message.content.strip()
@@ -305,6 +314,11 @@ def get_weather_forecast(latitude, longitude):
 @app.route('/')
 def test():
     return jsonify({"message": "Server is running!"})
+
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Max-Age', '3600')
+    return response
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True) 
