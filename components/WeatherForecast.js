@@ -68,9 +68,9 @@ const WeatherForecast = ({ latitude, longitude }) => {
             <Text style={styles.condition}>
               {day.day_condition}
             </Text>
-            <Text style={styles.precipitation}>
+            {/* <Text style={styles.precipitation}>
               {day.precipitation_probability}% rain
-            </Text>
+            </Text> */}
           </View>
         ))}
       </ScrollView>

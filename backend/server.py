@@ -68,6 +68,9 @@ def get_cached_weather(latitude, longitude, timestamp):
         if 'DailyForecasts' not in forecast_data:
             raise Exception("Forecast data not available")
             
+        # Add this before formatting the forecast
+        print("Raw forecast data:", forecast_data)  # Debug log
+        
         # Format the response
         formatted_forecast = []
         for day in forecast_data['DailyForecasts']:
@@ -77,8 +80,14 @@ def get_cached_weather(latitude, longitude, timestamp):
                 'max_temp': day['Temperature']['Maximum']['Value'],
                 'day_condition': day['Day']['IconPhrase'],
                 'night_condition': day['Night']['IconPhrase'],
-                'precipitation_probability': day.get('Day', {}).get('PrecipitationProbability', 0),
+                'precipitation_probability': max(
+                    day['Day'].get('PrecipitationProbability', 0),
+                    day['Night'].get('PrecipitationProbability', 0)
+                ),
             })
+            
+            # And add this after formatting each day
+            print(f"Formatted day data: {formatted_forecast[-1]}")  # Debug log
             
         return jsonify({
             'location': location_data['LocalizedName'],
