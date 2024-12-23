@@ -12,6 +12,7 @@
     "@expo/metro-runtime": "~4.0.0",
     "@gorhom/bottom-sheet": "^5.0.6",
     "@react-native-community/slider": "4.5.5",
+    "@react-native-picker/picker": "2.9.0",
     "@react-navigation/native": "^7.0.3",
     "@react-navigation/stack": "^7.0.3",
     "expo": "~52.0.7",
@@ -24,6 +25,7 @@
     "react-native": "0.76.2",
     "react-native-gesture-handler": "~2.20.2",
     "react-native-maps": "1.18.0",
+    "react-native-picker-select": "^9.3.1",
     "react-native-reanimated": "~3.16.1",
     "react-native-web": "~0.19.13"
   },
