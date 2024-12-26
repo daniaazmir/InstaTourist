@@ -40,6 +40,12 @@ if not GOOGLE_PLACES_API_KEY or not openai.api_key:
 # Cache the weather data for 1 hour
 @lru_cache(maxsize=100)
 def get_cached_weather(latitude, longitude, timestamp):
+    """
+    Gets weather forecast for a location using AccuWeather API
+    - First gets location key using coordinates
+    - Then gets 5-day forecast for that location
+    - Caches results to avoid hitting API limits
+    """
     if not ACCUWEATHER_API_KEY:
         raise Exception("AccuWeather API key not configured")
         
@@ -108,6 +114,11 @@ def get_cached_weather(latitude, longitude, timestamp):
 
 @app.route('/api/nearby-attractions/<float:latitude>/<float:longitude>/<int:radius>')
 def get_nearby_attractions(latitude, longitude, radius):
+    """
+    Uses Google Places API to find tourist attractions near given coordinates
+    - Takes latitude, longitude and search radius as parameters
+    - Returns list of attractions with details like name, rating, etc.
+    """
     if not GOOGLE_PLACES_API_KEY:
         return jsonify({"error": "Google Places API key not configured"}), 500
     
@@ -189,6 +200,12 @@ def get_place_details(place_id):
 
 @app.route('/api/generate-itinerary', methods=['POST'])
 def generate_itinerary():
+    """
+    Uses OpenAI API to generate a smart itinerary
+    - Takes list of attractions and user preferences
+    - Gets weather forecast for the location
+    - Generates an itinerary considering weather and preferences
+    """
     if not openai.api_key:
         return jsonify({"error": "OpenAI API key not configured"}), 500
 
@@ -298,6 +315,11 @@ Example:
 
 @app.route('/api/weather/<float:latitude>/<float:longitude>')
 def get_weather_forecast(latitude, longitude):
+    """
+    Gets weather forecast for a location
+    - Uses cached weather data if available
+    - Returns 5-day forecast with daily conditions
+    """
     # Round coordinates to 4 decimal places to improve cache hits
     lat = round(latitude, 4)
     lon = round(longitude, 4)

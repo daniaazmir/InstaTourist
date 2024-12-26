@@ -85,7 +85,7 @@ const ItineraryPlanner = ({ attractions, visible, onClose }) => {
       const timeoutId = setTimeout(() => controller.abort(), 30000);
 
       const response = await retryFetch(
-        'http://10.168.234.234:5000/api/generate-itinerary',
+        'http://192.168.1.15:5000/api/generate-itinerary',
         {
           method: 'POST',
           headers: {
