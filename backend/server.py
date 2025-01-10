@@ -165,11 +165,12 @@ def get_place_details(place_id):
     url = "https://maps.googleapis.com/maps/api/place/details/json"
     params = {
         'place_id': place_id,
-        'fields': 'photos,reviews',
+        'fields': 'photos,reviews',  # Request specific fields
         'key': GOOGLE_PLACES_API_KEY
     }
     
     try:
+        # Get details from Google Places API
         response = requests.get(url, params=params)
         data = response.json()
         
@@ -179,6 +180,7 @@ def get_place_details(place_id):
         result = data['result']
         photos = []
         
+        # Process photos if available
         if 'photos' in result:
             for photo in result['photos'][:5]:  # Limit to 5 photos
                 photo_url = f"https://maps.googleapis.com/maps/api/place/photo"
@@ -189,6 +191,7 @@ def get_place_details(place_id):
                 }
                 photos.append(f"{photo_url}?{urlencode(photo_params)}")
         
+        # Return formatted response
         return jsonify({
             'photos': photos,
             'reviews': result.get('reviews', [])

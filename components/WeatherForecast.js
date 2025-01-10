@@ -20,7 +20,7 @@ const WeatherForecast = ({ latitude, longitude }) => {
     try {
       console.log(`Fetching weather for coordinates: ${latitude}, ${longitude}`);  // Debug log
       const response = await fetch(
-        `http://192.168.1.15:5000/api/weather/${latitude}/${longitude}`
+        `http://172.20.10.7:5000/api/weather/${latitude}/${longitude}`
       );
       const data = await response.json();
       
