@@ -29,6 +29,10 @@ InstaTourist is a mobile application designed to enhance the travel experience f
 3. **ChatGPT OpenAI API**  
    - Used to generate personalized itineraries for the user. Based on the nearby attractions identified, the API helps create travel plans tailored to the user’s preferences and time constraints.
 
+<div align="center">
+    <img src="assets/images/pngwing.com.png" width="400" />
+</div>
+
 ## App Explanation
 
 **InstaTourist** is designed to be a comprehensive travel companion for tourists, with a focus on discovering new places and planning trips effectively.
