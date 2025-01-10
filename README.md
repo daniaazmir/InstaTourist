@@ -1,5 +1,5 @@
 
-# InstaTourist ✈️
+# InstaTourist Documentation ✈️
 
 ## U2001240 Farah Afrina Dania Binti Azmir & U2102800 Magdalena Maya Anak David 
 
@@ -90,3 +90,16 @@ InstaTourist is a mobile application designed to enhance the travel experience f
     <img src="assets/images/AfterRate.jpg" width="400" />
 </div>
 
+## Limitation
+
+### 1. **Dependency on Internet and API Reliability**
+The app relies on a stable internet connection and the Google Places API. If the API service is down or the user's connection is weak, the app's functionality may be affected.
+
+### 2. **Limited Coverage for Non-Listed Places**
+Some smaller or lesser-known attractions may not be available in the Google Places database, which could lead to incomplete results for users seeking unique or off-the-beaten-path experiences.
+
+## APIs Rate Limit
+
+<div align="center">
+    <img src="assets/images/APIRateLimit.png" width="900" />
+</div> 
