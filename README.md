@@ -10,24 +10,41 @@ InstaTourist is a mobile application designed to enhance the travel experience f
 - Provide a weekly weather forecast to assist users in planning their trips.
 - Generate personalized itineraries using AI, based on the attractions around the user.
 
+## FlowChart
+<div align="center">
+    <img src="assets/images/InstaTourist FlowChart-Page-1.drawio (1).png" width="400" />
+</div>
+
 ## API Used
 
-1. **Google Places API**  
-   - Used to fetch nearby tourist attractions based on the user's current location. This API helps in retrieving detailed information about places, including names, locations, ratings, and reviews.
+### 1. **Google Places API**
+- **Function**: The **Google Places API** plays a crucial role in identifying nearby tourist attractions based on the user's current location. This API fetches essential details about each attraction, including names, addresses, ratings, and reviews, giving users the information they need to explore the surrounding area.
+- **Use in InstaTourist**:
+  - Fetches and displays nearby tourist attractions based on the user’s geolocation.
+  - Provides detailed information on each attraction, such as reviews and ratings.
+  - Displays attraction photos to help users decide which places to visit.
 
 <div align="center">
     <img src="assets/images/GooglePlacesAPI.png" width="400" />
 </div>
 
-2. **Accuweather API**  
-   - Provides real-time weather information and forecasts for the user’s location. It displays daily and weekly weather updates, including temperature, precipitation, and wind conditions.
-   
+### 2. **Accuweather API**
+- **Function**: The **Accuweather API** integrates weather forecast data into the app, offering real-time updates for the user’s location. This helps users better plan their activities by providing daily and weekly forecasts, including temperature, precipitation, and wind conditions.
+- **Use in InstaTourist**:
+  - Provides real-time weather information for the user’s location.
+  - Displays a week’s worth of weather forecast, including temperature and general weather conditions.
+  - Assists users in planning their trips by informing them of weather conditions.
+
 <div align="center">
     <img src="assets/images/AccuweatherAPI.png" width="400" />
 </div>
-     
-3. **ChatGPT OpenAI API**  
-   - Used to generate personalized itineraries for the user. Based on the nearby attractions identified, the API helps create travel plans tailored to the user’s preferences and time constraints.
+
+### 3. **ChatGPT OpenAI API**
+- **Function**: The **ChatGPT OpenAI API** is used to generate personalized itineraries based on nearby tourist attractions. By utilizing AI, this API tailors travel plans to the user’s preferences, such as types of activities they enjoy or how much time they have.
+- **Use in InstaTourist**:
+  - Generates a personalized itinerary by analyzing the nearby tourist attractions.
+  - Provides travel suggestions based on user preferences and time constraints.
+  - Helps users organize their day effectively by offering an optimized plan.
 
 <div align="center">
     <img src="assets/images/pngwing.com.png" width="400" />
